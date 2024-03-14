@@ -1,0 +1,187 @@
+Program.Sub.ScreenSU.Start
+Gui.F_PartMarking..Create
+Gui.F_PartMarking..Caption("Part Marking: Maintenance")
+Gui.F_PartMarking..Size(5610,1995)
+Gui.F_PartMarking..MinX(0)
+Gui.F_PartMarking..MinY(0)
+Gui.F_PartMarking..Position(0,0)
+Gui.F_PartMarking..BackColor(-2147483633)
+Gui.F_PartMarking..MousePointer(0)
+Gui.F_PartMarking..Event(UnLoad,F_PartMarking_UnLoad)
+Gui.F_PartMarking.frmPartMarkings.Create(Frame)
+Gui.F_PartMarking.frmPartMarkings.Size(5175,1215)
+Gui.F_PartMarking.frmPartMarkings.Position(90,120)
+Gui.F_PartMarking.cmdDelete.Create(Button)
+Gui.F_PartMarking.cmdDelete.Size(855,375)
+Gui.F_PartMarking.cmdDelete.Position(3300,795)
+Gui.F_PartMarking.cmdDelete.Parent("frmPartMarkings")
+Gui.F_PartMarking.cmdDelete.Caption("Delete")
+Gui.F_PartMarking.cmdDelete.Event(Click,cmdDelete_Click)
+Gui.F_PartMarking.cmdSave.Create(Button)
+Gui.F_PartMarking.cmdSave.Size(855,375)
+Gui.F_PartMarking.cmdSave.Position(4230,795)
+Gui.F_PartMarking.cmdSave.Parent("frmPartMarkings")
+Gui.F_PartMarking.cmdSave.Caption("Save")
+Gui.F_PartMarking.cmdSave.Event(Click,cmdSave_Click)
+Gui.F_PartMarking.txtPart_Marking.Create(TextBox,"",True,4965,300,0,120,435,True,0,"Arial",8,-2147483643,1)
+Gui.F_PartMarking.txtPart_Marking.Parent("frmPartMarkings")
+Gui.F_PartMarking.lblPartMarkings.Create(Label,"Part Markings",True,1230,255,0,90,225,True,0,"Arial",8,-2147483633,0)
+Gui.F_PartMarking.lblPartMarkings.Parent("frmPartMarkings")
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+v.Global.sPart.Declare
+v.Global.sLoc.Declare
+v.Global.sPart.Set("")
+V.Global.bConOpen.Declare(Boolean,False)
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+f.Intrinsic.Control.SelectCase(v.Caller.Hook)
+	f.Intrinsic.Control.Case(10120)
+		'sets script button to Part Markings.
+		v.Passed.000068.Set("Part Markings")
+	f.Intrinsic.Control.Case(10210)
+
+		'checks if the user has chosen part number, 
+		f.Intrinsic.Control.If(v.Passed.000007, !=, "")		
+			v.Global.sLoc.Set(v.Passed.000009)
+			f.Intrinsic.String.RPad(v.Passed.000007, " ", 17, v.Global.sPart)
+			f.Intrinsic.String.Build("{0}{1}", v.Global.sPart, v.Passed.000008, v.Global.sPart)
+			'calls for loading of the property screen and profiles, load the selected list.
+			f.Intrinsic.Control.CallSub(loadPartMarkingsScreen)
+			f.Intrinsic.Control.CallSub(loadSelectedList)
+		f.Intrinsic.Control.Else
+			f.Intrinsic.UI.Msgbox("Please Select a Part Number.")
+		f.Intrinsic.Control.EndIf		
+	f.Intrinsic.Control.CaseElse
+f.Intrinsic.Control.EndSelect
+Program.Sub.Main.End
+
+Program.Sub.F_PartMarking_UnLoad.Start
+'Closes ODBC connection, default to connection : "con"
+'Use global variable instead of this function, which can only return true without erroring BM 2/16/21
+'f.Intrinsic.Control.If(v.ODBC!con.State, =, 1)
+'	f.ODBC.Connection!con.Close
+'f.Intrinsic.Control.EndIf
+F.Intrinsic.Control.If(V.Global.bConOpen, =, True)
+	F.ODBC.Connection!con.Close
+F.Intrinsic.Control.EndIf
+
+f.Intrinsic.Control.End
+Program.Sub.F_PartMarking_UnLoad.End
+
+Program.Sub.ErrorMsg.Start
+v.Local.sError.Declare
+'Closes ODBC connection, default to connection : "con"
+'f.Intrinsic.Control.If(v.ODBC!con.State, =, 1)
+'	f.ODBC.Connection!con.Close
+'f.Intrinsic.Control.EndIf
+F.Intrinsic.Control.If(V.Global.bConOpen, =, True)
+	F.ODBC.Connection!con.Close
+F.Intrinsic.Control.EndIf
+
+'Generic Error message.
+f.Intrinsic.String.Build("Project GCG_5382_Part_Markings.g2u {0}{0}Subroutine: {1}{0}Error: {2} with Description: {3}", v.Ambient.NewLine, v.Args.CurrentSub, v.Ambient.ErrorNumber, v.Ambient.ErrorDescription, v.Local.sError)
+f.Intrinsic.UI.Msgbox(v.Local.sError)
+Program.Sub.ErrorMsg.End
+
+Program.Sub.loadPartMarkingsScreen.Start
+'loads the screen properties.
+v.Local.sCaption.Declare
+f.Intrinsic.Control.Try
+	'loads the screen propeties
+	f.Intrinsic.String.Build("Part Markings: {0}-{1}", v.Passed.000007, v.Passed.000008, v.Local.sCaption)
+	gui.F_PartMarking..Caption(v.Local.sCaption)
+	gui.F_PartMarking.cmdNew.Visible(False)
+	gui.F_PartMarking.cmdNew.Enabled(False)
+	gui.F_PartMarking.txtPart_Marking.Size(4980, 300)
+	gui.F_PartMarking..Show
+f.Intrinsic.Control.Catch
+	f.Intrinsic.Control.CallSub(ErrorMsg, CurrentSub, v.Ambient.CurrentSubroutine)
+f.Intrinsic.Control.EndTry
+Program.Sub.loadPartMarkingsScreen.End
+
+Program.Sub.cmdDelete_Click.Start
+v.Local.sSQL.Declare
+v.Local.sPartMarking.Declare
+v.Local.sRet.Declare
+f.Intrinsic.Control.Try
+	f.Intrinsic.String.Build("Are you sure you wish to delete Part Markings for Part: {0}", v.Global.sPart, v.Local.sRet)
+	f.Intrinsic.UI.Msgbox(v.Local.sRet, "Delete", 4, v.Local.sRet)
+	'if the answer is yes, the part marking, not the whole record. 
+	f.Intrinsic.Control.If(v.Local.sRet, =, "6")
+		f.Intrinsic.String.Build("Update GCG_5382_PART_MARKS Set Part_Markings_List = '' Where Part = '{0}'", v.Global.sPart, v.Local.sSQL)
+		gui.F_PartMarking.txtPart_Marking.Text("")
+	'	f.Intrinsic.String.Build("Delete From GCG_5382_PART_MARKS Where PART = '{0}'", v.Global.sPart, v.Local.sSQL)
+		f.ODBC.Connection!con.OpenCompanyConnection
+		V.Global.bConOpen.Set(True)
+			f.ODBC.Connection!con.Execute(v.Local.sSQL)	
+		f.ODBC.Connection!con.Close
+		V.Global.bConOpen.Set(False)
+	f.Intrinsic.Control.EndIf
+f.Intrinsic.Control.Catch
+	f.Intrinsic.Control.CallSub(ErrorMsg, CurrentSub, v.Ambient.CurrentSubroutine)
+f.Intrinsic.Control.EndTry
+Program.Sub.cmdDelete_Click.End
+
+Program.Sub.cmdSave_Click.Start
+v.Local.sSQL.Declare
+v.Local.sTemp.Declare
+v.Local.sText.Declare
+v.Local.iCnt.Declare
+
+f.Intrinsic.Control.If(v.Screen.F_PartMarking!txtPart_Marking.Text!FieldValTrim, =, "")
+	f.Intrinsic.UI.Msgbox("Type in a Part Marking")
+	f.Intrinsic.Control.ExitSub
+f.Intrinsic.Control.EndIf
+
+f.Intrinsic.Control.Try
+	'If clicking from the Part Hook, it saves the list of selected Part Markings
+	'check if new for Insert or Update.
+	f.ODBC.Connection!con.OpenCompanyConnection
+	V.Global.bConOpen.Set(True)
+		f.Intrinsic.String.Build("Select * From GCG_5382_Part_Marks where PART = '{0}'", v.Global.sPart, v.Local.sSQL)
+		f.Data.DataTable.CreateFromSQL("SinglePartDT", "con", v.Local.sSQL)
+			f.Intrinsic.Control.If(v.DataTable.SinglePartDT.RowCount, =, 1)
+				f.Intrinsic.String.Build("Update GCG_5382_Part_Marks Set Part_Markings_List = '{0}' Where PART = '{1}' ", v.Screen.F_PartMarking!txtPart_Marking.Text!FieldValTrim, v.Global.sPart, v.Local.sSQL)
+				f.ODBC.Connection!con.Execute(v.Local.sSQL)
+				f.Intrinsic.UI.Msgbox("Done.")
+			f.Intrinsic.Control.ElseIf(v.DataTable.SinglePartDT.RowCount, =, 0)
+				f.Intrinsic.String.Build("Insert into  GCG_5382_PART_MARKS (PART, Part_Markings_List) Values ('{0}', '{1}')", v.Global.sPart, v.Screen.F_PartMarking!txtPart_Marking.Text!FieldValTrim, v.Local.sSQL)
+				f.ODBC.Connection!con.Execute(v.Local.sSQL)
+				f.Intrinsic.UI.Msgbox("Done.")
+			f.Intrinsic.Control.ElseIf(v.DataTable.SinglePartDT.RowCount, >, 1)
+				f.Intrinsic.UI.Msgbox("There are multiple records for this part, please address the records.")
+			f.Intrinsic.Control.EndIf
+		f.Data.DataTable.Close("SinglePartDT")
+	f.ODBC.Connection!con.Close	
+	V.Global.bConOpen.Set(False)
+f.Intrinsic.Control.Catch
+	f.Intrinsic.Control.CallSub(ErrorMsg, CurrentSub, v.Ambient.CurrentSubroutine)
+f.Intrinsic.Control.EndTry
+Program.Sub.cmdSave_Click.End
+
+Program.Sub.loadSelectedList.Start
+v.Local.sSQL.Declare
+v.Local.sFilter.Declare
+v.Local.sTemp.Declare
+v.Local.iCnt.Declare
+
+f.Intrinsic.Control.Try	
+	'Loads the part marks assigned to the specific part.
+	f.ODBC.Connection!con.OpenCompanyConnection
+	V.Global.bConOpen.Set(True)
+		f.Intrinsic.String.Build("Select * From GCG_5382_Part_Marks where PART = '{0}'", v.Global.sPart, v.Local.sSQL)
+		f.Data.DataTable.CreateFromSQL("singleDT", "con", v.Local.sSQL, true)
+			f.Intrinsic.Control.If(v.DataTable.singleDT.RowCount, =, 1)	
+				v.Local.sTemp.Set(v.DataTable.singleDT(0).Part_Markings_List!FieldValTrim)
+				gui.F_PartMarking.txtPart_Marking.Text(v.Local.sTemp)	
+			f.Intrinsic.Control.EndIf
+		f.Data.DataTable.Close("singleDT")
+	f.ODBC.Connection!con.Close
+	V.Global.bConOpen.Set(False)
+f.Intrinsic.Control.Catch
+	f.Intrinsic.Control.CallSub(ErrorMsg, CurrentSub, v.Ambient.CurrentSubroutine)
+f.Intrinsic.Control.EndTry
+Program.Sub.loadSelectedList.End
