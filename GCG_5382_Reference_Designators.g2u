@@ -1,0 +1,348 @@
+Program.Sub.ScreenSU.Start
+Gui.F_RefDesignators..Create
+Gui.F_RefDesignators..Caption("Ref Designators: Maintenance")
+Gui.F_RefDesignators..Size(5610,1995)
+Gui.F_RefDesignators..MinX(0)
+Gui.F_RefDesignators..MinY(0)
+Gui.F_RefDesignators..Position(0,0)
+Gui.F_RefDesignators..BackColor(-2147483633)
+Gui.F_RefDesignators..MousePointer(0)
+Gui.F_RefDesignators..Event(UnLoad,F_PartMarking_UnLoad)
+Gui.F_RefDesignators.frmRefDesignator.Create(Frame)
+Gui.F_RefDesignators.frmRefDesignator.Size(5175,1215)
+Gui.F_RefDesignators.frmRefDesignator.Position(90,120)
+Gui.F_RefDesignators.cmdDelete.Create(Button)
+Gui.F_RefDesignators.cmdDelete.Size(855,375)
+Gui.F_RefDesignators.cmdDelete.Position(3300,795)
+Gui.F_RefDesignators.cmdDelete.Parent("frmRefDesignator")
+Gui.F_RefDesignators.cmdDelete.Caption("Delete")
+Gui.F_RefDesignators.cmdDelete.Event(Click,cmdDelete_Click)
+Gui.F_RefDesignators.cmdSave.Create(Button)
+Gui.F_RefDesignators.cmdSave.Size(855,375)
+Gui.F_RefDesignators.cmdSave.Position(4230,795)
+Gui.F_RefDesignators.cmdSave.Parent("frmRefDesignator")
+Gui.F_RefDesignators.cmdSave.Caption("Save")
+Gui.F_RefDesignators.cmdSave.Event(Click,cmdSave_Click)
+Gui.F_RefDesignators.txtBom_Ref.Create(TextBox,"",True,4965,300,0,120,435,True,0,"Arial",8,-2147483643,1)
+Gui.F_RefDesignators.txtBom_Ref.Parent("frmRefDesignator")
+Gui.F_RefDesignators.lblBomRef.Create(Label,"Reference Designator",True,1230,255,0,90,225,True,0,"Arial",8,-2147483633,0)
+Gui.F_RefDesignators.lblBomRef.Parent("frmRefDesignator")
+Gui.F_Copy..Create
+Gui.F_Copy..Caption("Copy From")
+Gui.F_Copy..Size(4275,1410)
+Gui.F_Copy..MinX(0)
+Gui.F_Copy..MinY(0)
+Gui.F_Copy..Position(0,0)
+Gui.F_Copy..BackColor(-2147483633)
+Gui.F_Copy..MaxButton(False)
+Gui.F_Copy..MousePointer(0)
+Gui.F_Copy..Sizeable(False)
+Gui.F_Copy..Event(UnLoad,F_Copy_UnLoad)
+Gui.F_Copy.lbl1.Create(Label,"Copy References From:",True,1935,255,0,75,135,True,0,"Arial",8,-2147483633,0)
+Gui.F_Copy.txt1.Create(TextBox,"",True,2280,300,0,120,345,True,0,"Arial",8,-2147483643,1)
+Gui.F_Copy.cmdRouterBrw.Create(Button)
+Gui.F_Copy.cmdRouterBrw.Size(435,375)
+Gui.F_Copy.cmdRouterBrw.Position(2475,300)
+Gui.F_Copy.cmdRouterBrw.Caption("^")
+Gui.F_Copy.cmdRouterBrw.Event(Click,cmdRouterBrw_Click)
+Gui.F_Copy.cmdCopy.Create(Button)
+Gui.F_Copy.cmdCopy.Size(855,375)
+Gui.F_Copy.cmdCopy.Position(2970,300)
+Gui.F_Copy.cmdCopy.Caption("Copy")
+Gui.F_Copy.cmdCopy.Event(Click,cmdCopy_Click)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+v.Global.sPart.Declare
+v.Global.sLoc.Declare
+v.Global.sParent.Declare
+v.Global.sNewParent.Declare
+v.Global.sPart.Set("")
+V.Global.bConOpen.Declare(Boolean,False)
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+f.Intrinsic.Control.SelectCase(v.Caller.Hook)
+	'Copy From BOM
+	'Populate
+	f.Intrinsic.Control.Case(16300)
+		v.Passed.000216.Set("Copy Refs")
+		
+	'Script 3
+	f.Intrinsic.Control.Case(16380)
+		'v.Global.sPart.Set(v.Passed.000112)
+		v.Global.sNewParent.Set(v.Passed.000001)
+		gui.F_Copy..Show
+'*******************************************************************************************************************		
+	'Open From BOM Line
+	'Populate
+'	f.Intrinsic.Control.Case(16471)
+		'v.Passed.000030.Set("Ref Designator")
+	
+	'Script 1
+	'f.Intrinsic.Control.Case(16475)
+		'f.Intrinsic.String.Build("{0}{1}", v.Passed.000002, v.Passed.000074, v.Global.sPart)
+'*******************************************************************************************************************		
+	'Open From Router Line
+	'Populate
+	f.Intrinsic.Control.Case(11210)
+		'sets script button to Ref Designator.
+		v.Passed.000203.Set("Ref Designator")
+
+	'Script 3
+	f.Intrinsic.Control.Case(11430)
+		v.Global.sPart.Set(v.Passed.000112)
+		v.Global.sParent.Set(v.Passed.Router-Num)
+		'checks if the user has chosen part number, 
+		f.Intrinsic.Control.If(v.Passed.000112, !=, "")
+			'calls for loading of the property screen and profiles, load the selected list.
+			f.Intrinsic.Control.CallSub(loadPartMarkingsScreen)
+			f.Intrinsic.Control.CallSub(loadSelectedList)
+		f.Intrinsic.Control.Else
+			f.Intrinsic.UI.Msgbox("Please Select a Part Number.")
+		f.Intrinsic.Control.EndIf	
+'*******************************************************************************************************************			
+	f.Intrinsic.Control.Case(11151)
+		f.Intrinsic.Control.CallSub(copyRef)
+	f.Intrinsic.Control.CaseElse
+f.Intrinsic.Control.EndSelect
+Program.Sub.Main.End
+
+Program.Sub.F_PartMarking_UnLoad.Start
+'Closes ODBC connection, default to connection : "con"
+'f.Intrinsic.Control.If(v.ODBC!con.State, =, 1)
+'	f.ODBC.Connection!con.Close
+'f.Intrinsic.Control.EndIf
+F.Intrinsic.Control.If(V.Global.bConOpen, =, True)
+	F.ODBC.Connection!con.Close
+F.Intrinsic.Control.EndIf
+
+f.Intrinsic.Control.End
+Program.Sub.F_PartMarking_UnLoad.End
+
+Program.Sub.ErrorMsg.Start
+v.Local.sError.Declare
+'Closes ODBC connection, default to connection : "con"
+'This doesn't work in 19.1, throws error
+'f.Intrinsic.Control.If(v.ODBC!con.State, =, 1)
+'	f.ODBC.Connection!con.Close
+'f.Intrinsic.Control.EndIf
+
+'Added in global variable to keep track of connection state BM 2/15/21
+F.Intrinsic.Control.If(V.Global.bConOpen, =, True)
+	F.ODBC.Connection!con.Close
+F.Intrinsic.Control.EndIf
+
+'Generic Error message.
+f.Intrinsic.String.Build("Project GCG_5382_Reference_Designators.g2u {0}{0}Subroutine: {1}{0}Error: {2} with Description: {3}", v.Ambient.NewLine, v.Args.CurrentSub, v.Ambient.ErrorNumber, v.Ambient.ErrorDescription, v.Local.sError)
+f.Intrinsic.UI.Msgbox(v.Local.sError)
+Program.Sub.ErrorMsg.End
+
+Program.Sub.loadPartMarkingsScreen.Start
+'loads the screen properties.
+v.Local.sCaption.Declare
+f.Intrinsic.Control.Try
+	'loads the screen propeties
+	f.Intrinsic.String.Build("Reference Designator: {0}", v.Passed.000112, v.Local.sCaption)
+	gui.F_RefDesignators..Caption(v.Local.sCaption)
+	gui.F_RefDesignators.cmdNew.Visible(False)
+	gui.F_RefDesignators.cmdNew.Enabled(False)
+	gui.F_RefDesignators.txtBom_Ref.Size(4980, 300)
+	gui.F_RefDesignators..Show
+f.Intrinsic.Control.Catch
+	f.Intrinsic.Control.CallSub(ErrorMsg, CurrentSub, v.Ambient.CurrentSubroutine)
+f.Intrinsic.Control.EndTry
+Program.Sub.loadPartMarkingsScreen.End
+
+Program.Sub.cmdDelete_Click.Start
+v.Local.sSQL.Declare
+v.Local.sPartMarking.Declare
+v.Local.sRet.Declare
+f.Intrinsic.Control.Try
+	f.Intrinsic.String.Build("Are you sure you wish to delete Part Markings for Part: {0}", v.Global.sPart, v.Local.sRet)
+	f.Intrinsic.UI.Msgbox(v.Local.sRet, "Delete", 4, v.Local.sRet)
+	'if the answer is yes, the part marking, not the whole record. 
+	f.Intrinsic.Control.If(v.Local.sRet, =, "6")
+		f.Intrinsic.String.Build("Update GCG_5382_RD_LIST Set Part_RD_List = '' Where Part = '{0}' and Router = '{1}'", v.Global.sPart, v.Global.sParent, v.Local.sSQL)
+		gui.F_RefDesignators.txtBom_Ref.Text("")
+	'	f.Intrinsic.String.Build("Delete From GCG_5382_PART_MARKS Where PART = '{0}'", v.Global.sPart, v.Local.sSQL)
+		f.ODBC.Connection!con.OpenCompanyConnection
+		V.Global.bConOpen.Set(True)
+			f.ODBC.Connection!con.Execute(v.Local.sSQL)	
+		f.ODBC.Connection!con.Close
+		V.Global.bConOpen.Set(False)
+	f.Intrinsic.Control.EndIf
+f.Intrinsic.Control.Catch
+	f.Intrinsic.Control.CallSub(ErrorMsg, CurrentSub, v.Ambient.CurrentSubroutine)
+f.Intrinsic.Control.EndTry
+Program.Sub.cmdDelete_Click.End
+
+Program.Sub.cmdSave_Click.Start
+v.Local.sSQL.Declare
+v.Local.sTemp.Declare
+v.Local.sText.Declare
+v.Local.iCnt.Declare
+
+f.Intrinsic.Control.If(v.Screen.F_RefDesignators!txtBom_Ref.Text!FieldValTrim, =, "")
+	f.Intrinsic.UI.Msgbox("Type in a Part Marking")
+	f.Intrinsic.Control.ExitSub
+f.Intrinsic.Control.EndIf
+
+f.Intrinsic.Control.Try
+	'If clicking from the Part Hook, it saves the list of selected Part Markings
+	'check if new for Insert or Update.
+	f.ODBC.Connection!con.OpenCompanyConnection
+	V.Global.bConOpen.Set(True)
+	
+		f.Intrinsic.String.Build("Select * From GCG_5382_RD_LIST where PART = '{0}' and Router = '{1}'", v.Global.sPart, v.Global.sParent, v.Local.sSQL)
+		f.Data.DataTable.CreateFromSQL("SinglePartDT", "con", v.Local.sSQL)
+			f.Intrinsic.Control.If(v.DataTable.SinglePartDT.RowCount, =, 1)
+				f.Intrinsic.String.Build("Update GCG_5382_RD_LIST Set Part_RD_List = '{0}' Where PART = '{1}' and Router = '{2}'", v.Screen.F_RefDesignators!txtBom_Ref.Text!FieldValTrim, v.Global.sPart, v.Global.sParent, v.Local.sSQL)
+				f.ODBC.Connection!con.Execute(v.Local.sSQL)
+				f.Intrinsic.UI.Msgbox("Done.")
+			f.Intrinsic.Control.ElseIf(v.DataTable.SinglePartDT.RowCount, =, 0)
+				f.Intrinsic.String.Build("Insert into  GCG_5382_RD_LIST (PART, Part_RD_List, Router) Values ('{0}', '{1}', '{2}')", v.Global.sPart, v.Screen.F_RefDesignators!txtBom_Ref.Text!FieldValTrim, v.Global.sParent, v.Local.sSQL)
+				f.ODBC.Connection!con.Execute(v.Local.sSQL)
+				f.Intrinsic.UI.Msgbox("Done.")
+			f.Intrinsic.Control.ElseIf(v.DataTable.SinglePartDT.RowCount, >, 1)
+				f.Intrinsic.UI.Msgbox("There are multiple records for this part, please address the records.")
+			f.Intrinsic.Control.EndIf
+		f.Data.DataTable.Close("SinglePartDT")
+
+	f.ODBC.Connection!con.Close	
+	V.Global.bConOpen.Set(False)
+f.Intrinsic.Control.Catch
+	f.Intrinsic.Control.CallSub(ErrorMsg, CurrentSub, v.Ambient.CurrentSubroutine)
+f.Intrinsic.Control.EndTry
+Program.Sub.cmdSave_Click.End
+
+Program.Sub.loadSelectedList.Start
+v.Local.sSQL.Declare
+v.Local.sFilter.Declare
+v.Local.sTemp.Declare
+v.Local.iCnt.Declare
+
+f.Intrinsic.Control.Try	
+	'Loads the part marks assigned to the specific part.
+	f.ODBC.Connection!con.OpenCompanyConnection
+	V.Global.bConOpen.Set(True)
+		f.Intrinsic.String.Build("Select * From GCG_5382_RD_LIST where PART = '{0}' and Router = '{1}'", v.Global.sPart, v.Global.sParent, v.Local.sSQL)
+		f.Data.DataTable.CreateFromSQL("singleDT", "con", v.Local.sSQL, true)
+			f.Intrinsic.Control.If(v.DataTable.singleDT.RowCount, =, 1)	
+				v.Local.sTemp.Set(v.DataTable.singleDT(0).Part_RD_List!FieldValTrim)
+				gui.F_RefDesignators.txtBom_Ref.Text(v.Local.sTemp)	
+			f.Intrinsic.Control.EndIf
+		f.Data.DataTable.Close("singleDT")
+	f.ODBC.Connection!con.Close
+	V.Global.bConOpen.Set(False)
+f.Intrinsic.Control.Catch
+	f.Intrinsic.Control.CallSub(ErrorMsg, CurrentSub, v.Ambient.CurrentSubroutine)
+f.Intrinsic.Control.EndTry
+Program.Sub.loadSelectedList.End
+
+Program.Sub.copyRef.Start
+v.Local.sPart.Declare
+v.Local.sRouter.Declare
+v.Local.sNewRouter.Declare
+v.Local.sSQL.Declare
+v.Local.iRet.Declare
+f.Intrinsic.Control.Try
+
+	f.Intrinsic.UI.Msgbox("Do you wish to copy the reference designators for this router?", "Copy References", 4, v.Local.iRet)
+	
+	f.Intrinsic.Control.If(v.Local.iRet, =, 6)	
+		f.Intrinsic.String.Build("{0}{1}", v.Passed.000003, v.Passed.000004, v.Local.sRouter)
+		f.Intrinsic.String.Build("{0}{1}", v.Passed.000006, v.Passed.000007, v.Local.sNewRouter)
+		
+		f.Intrinsic.Control.If(v.Local.sRouter.Trim, =, "")
+			f.Intrinsic.Control.ExitSub
+		f.Intrinsic.Control.EndIf	
+		
+		f.Intrinsic.Control.If(v.Local.sNewRouter.Trim, =, "")
+			f.Intrinsic.Control.ExitSub
+		f.Intrinsic.Control.EndIf	
+		
+		f.ODBC.Connection!con.OpenCompanyConnection
+		V.Global.bConOpen.Set(True)
+			f.Intrinsic.String.Build("Select * From GCG_5382_RD_LIST where Router = '{0}'", v.Local.sRouter, v.Local.sSQL)
+			f.Data.DataTable.CreateFromSQL("copyDT", "con", v.Local.sSQL)
+		f.ODBC.Connection!con.Close
+		V.Global.bConOpen.Set(False)
+		f.Data.DataTable.SetValue("copyDT", -1, "Router", v.Local.sNewRouter)
+
+		f.Intrinsic.Control.If(v.DataTable.copyDT.RowCount, >, 0)
+			f.ODBC.Connection!con.OpenCompanyConnection
+			V.Global.bConOpen.Set(True)
+				f.Data.DataTable.SaveToDB("copyDT", "con", "GCG_5382_RD_LIST", "PART*!*Router", 256)
+			f.ODBC.Connection!con.Close
+			V.Global.bConOpen.Set(False)
+		f.Intrinsic.Control.EndIf			
+	f.Intrinsic.Control.EndIf
+f.Intrinsic.Control.Catch
+	f.Intrinsic.Control.CallSub(ErrorMsg, CurrentSub, v.Ambient.CurrentSubroutine)
+f.Intrinsic.Control.EndTry
+Program.Sub.copyRef.End
+
+Program.Sub.copyFromBom.Start
+v.Local.sSQL.Declare
+v.Local.iRet.Declare
+f.Intrinsic.Control.Try
+		f.Intrinsic.UI.Msgbox("Do you wish to copy the reference designators for this router?", "Copy References", 4, v.Local.iRet)
+	
+	f.Intrinsic.Control.If(v.Local.iRet, =, 6)	
+		
+		f.ODBC.Connection!con.OpenCompanyConnection
+			f.Intrinsic.String.Build("Select * From GCG_5382_RD_LIST where Router = '{0}'", v.Global.sParent, v.Local.sSQL)
+			f.Data.DataTable.CreateFromSQL("copyDT", "con", v.Local.sSQL)
+		f.ODBC.Connection!con.Close
+		V.Global.bConOpen.Set(False)
+		f.Data.DataTable.SetValue("copyDT", -1, "Router",  v.Global.sNewParent)
+
+		f.Intrinsic.Control.If(v.DataTable.copyDT.RowCount, >, 0)
+			f.ODBC.Connection!con.OpenCompanyConnection
+			V.Global.bConOpen.Set(True)
+				f.Data.DataTable.SaveToDB("copyDT", "con", "GCG_5382_RD_LIST", "PART*!*Router", 256)
+			f.ODBC.Connection!con.Close
+			V.Global.bConOpen.Set(False)
+		f.Intrinsic.Control.EndIf			
+	f.Intrinsic.Control.EndIf
+f.Intrinsic.Control.Catch
+	f.Intrinsic.Control.CallSub(ErrorMsg, CurrentSub, v.Ambient.CurrentSubroutine)
+f.Intrinsic.Control.EndTry
+Program.Sub.copyFromBom.End
+
+Program.Sub.cmdRouterBrw_Click.Start
+v.Local.sRet.Declare
+v.Local.sTemp.Declare
+f.Intrinsic.Control.Try
+	f.ODBC.Connection!con.OpenCompanyConnection
+	V.Global.bConOpen.Set(True)
+		f.Intrinsic.UI.browser("Router", "con", "Select Router,Description_Router,Similar from V_Router_Header", "Router*!*Description_Router*!*Similar", "80*!*120*!*80", v.Local.sRet)
+	f.ODBC.Connection!con.Close
+	V.Global.bConOpen.Set(False)
+	f.Intrinsic.Control.If(v.Local.sRet, <>, "***CANCEL***")
+		f.Intrinsic.String.Split(v.Local.sRet, "*!*", v.Local.sTemp)
+		gui.F_Copy.txt1.Text(v.Local.sTemp(0))
+		v.Global.sParent.Set(v.Local.sTemp(0))
+	f.Intrinsic.Control.EndIf
+f.Intrinsic.Control.Catch
+	f.Intrinsic.Control.CallSub(ErrorMsg, CurrentSub, v.Ambient.CurrentSubroutine)
+f.Intrinsic.Control.EndTry
+Program.Sub.cmdRouterBrw_Click.End
+
+Program.Sub.cmdCopy_Click.Start
+f.Intrinsic.Control.Try
+	f.Intrinsic.Control.CallSub(copyFromBom)
+f.Intrinsic.Control.Catch
+	f.Intrinsic.Control.CallSub(ErrorMsg, CurrentSub, v.Ambient.CurrentSubroutine)
+f.Intrinsic.Control.EndTry
+Program.Sub.cmdCopy_Click.End
+
+Program.Sub.F_Copy_UnLoad.Start
+'Make sure to close connections BM 2/15/21 
+F.Intrinsic.Control.If(V.Global.bConOpen, =, True)
+	F.ODBC.Connection!con.Close
+F.Intrinsic.Control.EndIf
+
+f.Intrinsic.Control.End
+Program.Sub.F_Copy_UnLoad.End
